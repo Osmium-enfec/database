@@ -155,7 +155,7 @@ definitions:
       markdown_content:
         type: string
     type: object
-host: localhost:8080
+host: content-review-api-bnkf.onrender.com
 info:
   contact:
     name: API Support

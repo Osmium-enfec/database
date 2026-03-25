@@ -24,7 +24,7 @@ import (
 // @contact.url http://www.example.com/support
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
-// @host localhost:8080
+// @host content-review-api-bnkf.onrender.com
 // @basePath /api/v1
 // @schemes http https
 
