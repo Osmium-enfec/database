@@ -34,11 +34,16 @@ type ServerConfig struct {
 	Port string
 }
 
+type CORSConfig struct {
+	AllowedOrigins []string
+}
+
 type Config struct {
 	App      AppConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
 	Server   ServerConfig
+	CORS     CORSConfig
 }
 
 // ParseDatabaseURL parses Render's DATABASE_URL format: postgres://user:password@host:port/dbname
@@ -128,7 +133,31 @@ func LoadConfig() *Config {
 			Host: getEnv("SERVER_HOST", "0.0.0.0"),
 			Port: getEnv("SERVER_PORT", "8080"),
 		},
+		CORS: CORSConfig{
+			AllowedOrigins: parseCORSOrigins(
+				getEnv("CORS_ALLOWED_ORIGINS", 
+					"https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app,http://localhost:3000,http://localhost:5173,https://localhost:3000"),
+			),
+		},
 	}
+}
+
+// parseCORSOrigins parses comma-separated CORS origins
+func parseCORSOrigins(originsStr string) []string {
+	if originsStr == "" {
+		return []string{
+			"https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app",
+			"http://localhost:3000",
+			"http://localhost:5173",
+			"https://localhost:3000",
+		}
+	}
+	
+	origins := strings.Split(originsStr, ",")
+	for i := range origins {
+		origins[i] = strings.TrimSpace(origins[i])
+	}
+	return origins
 }
 
 func getEnv(key, defaultValue string) string {

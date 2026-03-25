@@ -73,6 +73,9 @@ func main() {
 	// Setup routes
 	mux := http.NewServeMux()
 
+	// Configure CORS middleware
+	corsHandler := middleware.CORSMiddleware(cfg.CORS.AllowedOrigins)
+
 	// Health check
 	mux.HandleFunc("/health", healthCheck)
 
@@ -132,7 +135,11 @@ func main() {
 	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 	log.Printf("Server starting on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	log.Printf("CORS enabled for: %v", cfg.CORS.AllowedOrigins)
+	
+	// Wrap mux with CORS middleware
+	handler := corsHandler(mux)
+	if err := http.ListenAndServe(addr, handler); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
 }
