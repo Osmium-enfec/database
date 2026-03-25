@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Content Review API - Swagger UI</title>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css">
+  <link rel="icon" type="image/png" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/favicon-16x16.png" sizes="16x16" />
+  <style>
+    html {
+      box-sizing: border-box;
+      overflow: -moz-scrollbars-vertical;
+      overflow-y: scroll;
+    }
+    *,
+    *:before,
+    *:after {
+      box-sizing: inherit;
+    }
+    body {
+      margin: 0;
+      background: #fafafa;
+    }
+    .topbar {
+      background-color: #0d47a1;
+      padding: 10px 0;
+      border-bottom: 3px solid #00bcd4;
+    }
+    .topbar-title {
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 10px 20px;
+      margin: 0;
+    }
+    .token-info {
+      background: #e3f2fd;
+      padding: 10px 20px;
+      border-left: 4px solid #2196f3;
+      margin: 10px 20px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #1565c0;
+    }
+    .token-info strong {
+      color: #0d47a1;
+    }
+    .token-info button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 10px;
+      font-weight: bold;
+    }
+    .token-info button:hover {
+      background: #1976d2;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <h1 class="topbar-title">📚 Content Review API</h1>
+  </div>
+  <div class="token-info">
+    <strong>💾 Token Storage:</strong> <span id="token-status">No token saved</span>
+    <button onclick="window.clearTokenAndRefresh()">Clear Token</button>
+  </div>
+  <div id="swagger-ui"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.js"></script>
+  <script>
+    const STORAGE_KEY = 'swagger_bearer_token';
+    
+    function getStoredToken() {
+      return localStorage.getItem(STORAGE_KEY);
+    }
+    
+    function saveToken(token) {
+      if (token) {
+        localStorage.setItem(STORAGE_KEY, token);
+        updateTokenStatus();
+        console.log('✅ Token saved to localStorage!');
+      }
+    }
+    
+    function clearTokenAndRefresh() {
+      localStorage.removeItem(STORAGE_KEY);
+      updateTokenStatus();
+      location.reload();
+    }
+    
+    function updateTokenStatus() {
+      const token = getStoredToken();
+      const el = document.getElementById('token-status');
+      if (token) {
+        el.innerHTML = `✅ Token stored (${token.substring(0, 20)}...)`;
+      } else {
+        el.innerHTML = '❌ No token saved';
+      }
+    }
+    
+    window.onload = function() {
+      // Initialize Swagger UI
+      const ui = SwaggerUIBundle({
+        url: "/swagger/doc.json",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        onComplete: function() {
+          updateTokenStatus();
+          
+          // Auto-populate token if stored
+          const storedToken = getStoredToken();
+          if (storedToken) {
+            console.log('Auto-loading token from storage...');
+            // Try to set the token via swagger-ui's auth system
+            ui.presets[0].statePlugins?.auth?.actions?.authorize?.({Bearer: {value: storedToken}});
+          }
+          
+          // Intercept authorize clicks
+          setupTokenInterception(ui);
+        }
+      });
+      
+      window.ui = ui;
+    }
+    
+    function setupTokenInterception(ui) {
+      // Watch for changes to input fields
+      setTimeout(() => {
+        const observer = new MutationObserver(function(mutations) {
+          // Look for the authorize button or modal
+          const authButton = document.querySelector('[aria-label="authorize"]') ||
+                            document.querySelector('button.auth') ||
+                            document.querySelector('button[title*="Authorize"]');
+          
+          if (authButton) {
+            // Intercept clicks on authorize button
+            authButton.addEventListener('click', function() {
+              setTimeout(() => {
+                // Look for the token input field
+                const inputs = document.querySelectorAll('input[type="password"], input[placeholder*="Bearer"]');
+                inputs.forEach(input => {
+                  if (input.value && input.value.startsWith('eyJ')) {
+                    saveToken(input.value);
+                  }
+                });
+              }, 500);
+            });
+            
+            observer.disconnect();
+          }
+        });
+        
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      }, 1500);
+    }
+    
+    // Expose utilities
+    window.tokenUtils = {
+      save: saveToken,
+      get: getStoredToken,
+      clear: () => {
+        localStorage.removeItem(STORAGE_KEY);
+        updateTokenStatus();
+      },
+      status: () => console.log(getStoredToken() ? '✅ Token saved' : '❌ No token')
+    };
+  </script>
+</body>
+</html>

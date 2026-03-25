@@ -1,0 +1,437 @@
+basePath: /api/v1
+definitions:
+  dto.ApproveVersionRequest:
+    properties:
+      comment:
+        maxLength: 1000
+        type: string
+    type: object
+  dto.CreateContentRequest:
+    properties:
+      data:
+        $ref: '#/definitions/models.ContentData'
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        type: string
+      estimated_time_minutes:
+        maximum: 1440
+        minimum: 1
+        type: integer
+      program_id:
+        type: string
+      subtopic_id:
+        type: string
+      tags:
+        items:
+          type: string
+        maxItems: 20
+        type: array
+      topic_id:
+        type: string
+      type:
+        enum:
+        - question
+        - code_problem
+        - documentation
+        type: string
+    required:
+    - data
+    - difficulty
+    - estimated_time_minutes
+    - program_id
+    - subtopic_id
+    - topic_id
+    - type
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  dto.RejectVersionRequest:
+    properties:
+      comment:
+        maxLength: 1000
+        type: string
+    required:
+    - comment
+    type: object
+  dto.UpdateContentRequest:
+    properties:
+      data:
+        $ref: '#/definitions/models.ContentData'
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        type: string
+      estimated_time_minutes:
+        maximum: 1440
+        minimum: 1
+        type: integer
+      tags:
+        items:
+          type: string
+        maxItems: 20
+        type: array
+    required:
+    - data
+    type: object
+  models.CodeProblemData:
+    properties:
+      execution_template:
+        type: string
+      solution_code:
+        type: string
+      starter_code:
+        type: string
+      test_cases:
+        items:
+          $ref: '#/definitions/models.CodeTestCase'
+        type: array
+    type: object
+  models.CodeTestCase:
+    properties:
+      expected_output:
+        type: string
+      input:
+        type: string
+      is_hidden:
+        type: boolean
+    type: object
+  models.ContentData:
+    properties:
+      code_problem_data:
+        $ref: '#/definitions/models.CodeProblemData'
+      correct_options:
+        items:
+          type: integer
+        type: array
+      description:
+        type: string
+      documentation_data:
+        $ref: '#/definitions/models.DocumentationData'
+      options:
+        items:
+          type: string
+        type: array
+      question_text:
+        type: string
+      question_type:
+        description: mcq, msq, fill, short
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  models.DocumentationData:
+    properties:
+      markdown_content:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: API Support
+    url: http://www.example.com/support
+  description: A production-grade content management and review system
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Content Review API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password, returns JWT tokens
+      parameters:
+      - description: User login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      summary: User login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: User registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      summary: Register a new user
+      tags:
+      - auth
+  /contents:
+    get:
+      consumes:
+      - application/json
+      description: List content items with pagination and filtering options
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Content type filter
+        in: query
+        name: type
+        type: string
+      - description: Content status filter
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: List all content
+      tags:
+      - content
+  /contents/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific content item with all its versions and details
+      parameters:
+      - description: Content ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: Get content by ID
+      tags:
+      - content
+    put:
+      consumes:
+      - application/json
+      description: Update an existing content item
+      parameters:
+      - description: Content ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateContentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: Update content
+      tags:
+      - content
+  /contents/{id}/submit:
+    post:
+      consumes:
+      - application/json
+      description: Submit content for reviewer approval
+      parameters:
+      - description: Content ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: Submit content for review
+      tags:
+      - content
+  /contents/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new content item (MCQ, MSQ, code problem, or documentation)
+      parameters:
+      - description: Content creation details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateContentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: Create new content
+      tags:
+      - content
+  /reviews/{version_id}/approve:
+    post:
+      consumes:
+      - application/json
+      description: Approve a content version for publication
+      parameters:
+      - description: Content Version ID
+        in: path
+        name: version_id
+        required: true
+        type: string
+      - description: Approval details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ApproveVersionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: Approve content version
+      tags:
+      - review
+  /reviews/{version_id}/reject:
+    post:
+      consumes:
+      - application/json
+      description: Reject a content version with feedback
+      parameters:
+      - description: Content Version ID
+        in: path
+        name: version_id
+        required: true
+        type: string
+      - description: Rejection details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RejectVersionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: Reject content version
+      tags:
+      - review
+  /reviews/pending:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve list of content pending review (Reviewer/Admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - Bearer: []
+      summary: Get pending reviews
+      tags:
+      - review
+schemes:
+- http
+- https
+swagger: "2.0"
