@@ -136,7 +136,7 @@ func main() {
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 	log.Printf("Server starting on %s", addr)
 	log.Printf("CORS enabled for: %v", cfg.CORS.AllowedOrigins)
-	
+
 	// Wrap mux with CORS middleware
 	handler := corsHandler(mux)
 	if err := http.ListenAndServe(addr, handler); err != nil {

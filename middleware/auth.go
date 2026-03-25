@@ -97,6 +97,7 @@ func writeAuthError(w http.ResponseWriter, statusCode int, message string) {
 	w.WriteHeader(statusCode)
 	fmt.Fprintf(w, `{"success": false, "message": "%s", "code": "AUTH_ERROR"}`, message)
 }
+
 // CORSMiddleware handles Cross-Origin Resource Sharing
 func CORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -112,21 +113,26 @@ func CORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 				}
 			}
 
-			if allowed {
+			// Always set CORS headers for requests with Origin header
+			if origin != "" && allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token, Origin")
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Access-Control-Max-Age", "86400")
 			}
 
-			// Handle preflight requests
+			// Handle preflight OPTIONS requests
 			if r.Method == http.MethodOptions {
-				w.WriteHeader(http.StatusNoContent)
+				if origin != "" && allowed {
+					w.WriteHeader(http.StatusNoContent)
+				} else if origin != "" {
+					// Return 403 for disallowed origins on preflight
+					w.WriteHeader(http.StatusForbidden)
+				}
 				return
 			}
 
 			next.ServeHTTP(w, r)
 		})
 	}
-}

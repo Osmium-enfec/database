@@ -135,7 +135,7 @@ func LoadConfig() *Config {
 		},
 		CORS: CORSConfig{
 			AllowedOrigins: parseCORSOrigins(
-				getEnv("CORS_ALLOWED_ORIGINS", 
+				getEnv("CORS_ALLOWED_ORIGINS",
 					"https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app,http://localhost:3000,http://localhost:5173,https://localhost:3000"),
 			),
 		},
@@ -146,13 +146,17 @@ func LoadConfig() *Config {
 func parseCORSOrigins(originsStr string) []string {
 	if originsStr == "" {
 		return []string{
+			// Lovable URLs
+			"https://e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovableproject.com",
 			"https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app",
+			"https://contentenfeca.lovable.app",
+			// Local development
 			"http://localhost:3000",
 			"http://localhost:5173",
 			"https://localhost:3000",
 		}
 	}
-	
+
 	origins := strings.Split(originsStr, ",")
 	for i := range origins {
 		origins[i] = strings.TrimSpace(origins[i])
