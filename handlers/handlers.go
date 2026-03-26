@@ -415,9 +415,9 @@ func (h *ContentHandler) SubmitForReview(w http.ResponseWriter, r *http.Request)
 	content, tags, err := h.contentService.SubmitForReview(r.Context(), id, currentUser.ID, req.ReviewerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			writeError(w, http.StatusNotFound, "content not found - make sure you created this content")
+			writeError(w, http.StatusNotFound, fmt.Sprintf("content not found (ID: %s)", id))
 		} else if strings.Contains(err.Error(), "permission denied") {
-			writeError(w, http.StatusForbidden, "you can only submit content that you created")
+			writeError(w, http.StatusForbidden, fmt.Sprintf("you can only submit content you created (your ID: %s)", currentUser.ID))
 		} else {
 			writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to submit content: %v", err))
 		}
