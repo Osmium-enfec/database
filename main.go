@@ -29,6 +29,10 @@ import (
 // @host content-review-api-bnkf.onrender.com
 // @basePath /api/v1
 // @schemes https http
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	// Load configuration
