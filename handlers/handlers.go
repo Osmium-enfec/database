@@ -366,6 +366,29 @@ func (h *ContentHandler) SubmitForReview(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Validate reviewer exists and has reviewer role
+	var reviewerRole string
+	db := r.Context().Value("db").(*sql.DB)
+	err := db.QueryRowContext(
+		r.Context(),
+		"SELECT role FROM users WHERE id = $1 AND is_active = true",
+		req.ReviewerID,
+	).Scan(&reviewerRole)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			writeError(w, http.StatusBadRequest, "reviewer not found - invalid reviewer_id")
+		} else {
+			writeError(w, http.StatusInternalServerError, "failed to validate reviewer")
+		}
+		return
+	}
+
+	if reviewerRole != "reviewer" && reviewerRole != "admin" {
+		writeError(w, http.StatusBadRequest, "selected user is not a reviewer")
+		return
+	}
+
 	user := r.Context().Value("user").(*models.User)
 	content, tags, err := h.contentService.SubmitForReview(r.Context(), id, user.ID, req.ReviewerID)
 	if err != nil {
