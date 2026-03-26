@@ -369,6 +369,29 @@
                 }
             }
         },
+        "/reviewers": {
+            "get": {
+                "description": "Get list of all active reviewers for reviewer selection",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dropdown"
+                ],
+                "summary": "Get all reviewers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/reviews/pending": {
             "get": {
                 "security": [
@@ -725,6 +748,15 @@
                 "password": {
                     "type": "string",
                     "minLength": 8
+                },
+                "role": {
+                    "description": "Optional: defaults to 'creator'",
+                    "type": "string",
+                    "enum": [
+                        "creator",
+                        "reviewer",
+                        "admin"
+                    ]
                 }
             }
         },

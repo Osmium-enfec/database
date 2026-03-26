@@ -105,6 +105,13 @@ definitions:
       password:
         minLength: 8
         type: string
+      role:
+        description: 'Optional: defaults to ''creator'''
+        enum:
+        - creator
+        - reviewer
+        - admin
+        type: string
     required:
     - email
     - name
@@ -430,6 +437,21 @@ paths:
           schema:
             $ref: '#/definitions/dto.APIResponse'
       summary: Get all programs
+      tags:
+      - dropdown
+  /reviewers:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all active reviewers for reviewer selection
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.APIResponse'
+      summary: Get all reviewers
       tags:
       - dropdown
   /reviews/{version_id}/approve:
