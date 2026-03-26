@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -359,21 +360,37 @@ func (h *ContentHandler) SubmitForReview(w http.ResponseWriter, r *http.Request)
 	id = strings.TrimSuffix(id, "/submit")
 
 	var req dto.SubmitForReviewRequest
-	json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
 
 	if req.ReviewerID == "" {
 		writeError(w, http.StatusBadRequest, "reviewer_id is required")
 		return
 	}
 
+	// Get user from context
+	user := r.Context().Value("user")
+	if user == nil {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+	currentUser, ok := user.(*models.User)
+	if !ok || currentUser == nil {
+		writeError(w, http.StatusUnauthorized, "invalid user context")
+		return
+	}
+
 	// Validate reviewer exists and has reviewer role
 	var reviewerRole string
+	var reviewerActive bool
 	db := r.Context().Value("db").(*sql.DB)
 	err := db.QueryRowContext(
 		r.Context(),
-		"SELECT role FROM users WHERE id = $1 AND is_active = true",
+		"SELECT role, is_active FROM users WHERE id = $1",
 		req.ReviewerID,
-	).Scan(&reviewerRole)
+	).Scan(&reviewerRole, &reviewerActive)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -384,18 +401,25 @@ func (h *ContentHandler) SubmitForReview(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if !reviewerActive {
+		writeError(w, http.StatusBadRequest, "selected reviewer is not active")
+		return
+	}
+
 	if reviewerRole != "reviewer" && reviewerRole != "admin" {
 		writeError(w, http.StatusBadRequest, "selected user is not a reviewer")
 		return
 	}
 
-	user := r.Context().Value("user").(*models.User)
-	content, tags, err := h.contentService.SubmitForReview(r.Context(), id, user.ID, req.ReviewerID)
+	// Submit for review
+	content, tags, err := h.contentService.SubmitForReview(r.Context(), id, currentUser.ID, req.ReviewerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			writeError(w, http.StatusNotFound, "content not found")
+			writeError(w, http.StatusNotFound, "content not found - make sure you created this content")
+		} else if strings.Contains(err.Error(), "permission denied") {
+			writeError(w, http.StatusForbidden, "you can only submit content that you created")
 		} else {
-			writeError(w, http.StatusInternalServerError, "failed to submit content")
+			writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to submit content: %v", err))
 		}
 		return
 	}
