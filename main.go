@@ -39,6 +39,11 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialize database schema
+	if err := initializeSchema(db); err != nil {
+		log.Fatalf("Failed to initialize database schema: %v", err)
+	}
+
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(db)
 	contentRepo := repositories.NewContentRepository(db)
@@ -168,6 +173,110 @@ func connectDatabase(cfg *config.Config) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func initializeSchema(db *sql.DB) error {
+	// SQL schema - all tables
+	schema := `
+	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+	CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+	CREATE TABLE IF NOT EXISTS users (
+		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+		name VARCHAR(255) NOT NULL,
+		email VARCHAR(255) NOT NULL UNIQUE,
+		password_hash VARCHAR(255) NOT NULL,
+		role VARCHAR(50) NOT NULL DEFAULT 'creator' CHECK (role IN ('creator', 'reviewer', 'admin')),
+		is_active BOOLEAN DEFAULT TRUE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS programs (
+		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+		name VARCHAR(255) NOT NULL,
+		description TEXT,
+		is_active BOOLEAN DEFAULT TRUE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS topics (
+		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+		program_id UUID NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+		name VARCHAR(255) NOT NULL,
+		description TEXT,
+		is_active BOOLEAN DEFAULT TRUE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS subtopics (
+		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+		topic_id UUID NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+		name VARCHAR(255) NOT NULL,
+		description TEXT,
+		is_active BOOLEAN DEFAULT TRUE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS contents (
+		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+		type VARCHAR(50) NOT NULL CHECK (type IN ('question', 'code_problem', 'documentation')),
+		program_id UUID NOT NULL REFERENCES programs(id),
+		topic_id UUID NOT NULL REFERENCES topics(id),
+		subtopic_id UUID NOT NULL REFERENCES subtopics(id),
+		difficulty VARCHAR(50) NOT NULL CHECK (difficulty IN ('easy', 'medium', 'hard')),
+		estimated_time_minutes INT NOT NULL,
+		status VARCHAR(50) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending_review', 'approved', 'rejected')),
+		created_by UUID NOT NULL REFERENCES users(id),
+		current_version_id UUID,
+		is_active BOOLEAN DEFAULT TRUE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS content_versions (
+		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+		content_id UUID NOT NULL REFERENCES contents(id) ON DELETE CASCADE,
+		version_number INT NOT NULL,
+		data JSONB NOT NULL,
+		created_by UUID NOT NULL REFERENCES users(id),
+		review_status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (review_status IN ('pending', 'approved', 'rejected')),
+		review_comment TEXT,
+		reviewed_by UUID REFERENCES users(id),
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(content_id, version_number)
+	);
+
+	CREATE TABLE IF NOT EXISTS content_tags (
+		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+		content_id UUID NOT NULL REFERENCES contents(id) ON DELETE CASCADE,
+		tag VARCHAR(100) NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(content_id, tag)
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+	CREATE INDEX IF NOT EXISTS idx_programs_is_active ON programs(is_active);
+	CREATE INDEX IF NOT EXISTS idx_topics_program_id ON topics(program_id);
+	CREATE INDEX IF NOT EXISTS idx_contents_created_by ON contents(created_by);
+	CREATE INDEX IF NOT EXISTS idx_contents_status ON contents(status);
+	CREATE INDEX IF NOT EXISTS idx_content_versions_content_id ON content_versions(content_id);
+	CREATE INDEX IF NOT EXISTS idx_content_tags_content_id ON content_tags(content_id);
+	`
+
+	_, err := db.Exec(schema)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize schema (may already exist): %v", err)
+		// Don't fail - schema might already exist
+		return nil
+	}
+
+	log.Println("Database schema initialized successfully")
+	return nil
 }
 
 func serveSwaggerUI(w http.ResponseWriter, r *http.Request) {
