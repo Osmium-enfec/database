@@ -699,7 +699,7 @@ func NewDropdownHandler(contentService services.ContentService) *DropdownHandler
 // @Accept json
 // @Produce json
 // @Success 200 {object} dto.APIResponse
-// @Router /programs [get]
+// @Router /dropdown/programs [get]
 func (h *DropdownHandler) GetPrograms(w http.ResponseWriter, r *http.Request) {
 	rows, err := r.Context().Value("db").(*sql.DB).QueryContext(
 		r.Context(),
@@ -732,7 +732,7 @@ func (h *DropdownHandler) GetPrograms(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param program_id query string true "Program ID"
 // @Success 200 {object} dto.APIResponse
-// @Router /topics [get]
+// @Router /dropdown/topics [get]
 func (h *DropdownHandler) GetTopicsByProgram(w http.ResponseWriter, r *http.Request) {
 	programID := r.URL.Query().Get("program_id")
 	if programID == "" {
@@ -772,7 +772,7 @@ func (h *DropdownHandler) GetTopicsByProgram(w http.ResponseWriter, r *http.Requ
 // @Produce json
 // @Param topic_id query string true "Topic ID"
 // @Success 200 {object} dto.APIResponse
-// @Router /subtopics [get]
+// @Router /dropdown/subtopics [get]
 func (h *DropdownHandler) GetSubtopicsByTopic(w http.ResponseWriter, r *http.Request) {
 	topicID := r.URL.Query().Get("topic_id")
 	if topicID == "" {
@@ -811,7 +811,7 @@ func (h *DropdownHandler) GetSubtopicsByTopic(w http.ResponseWriter, r *http.Req
 // @Accept json
 // @Produce json
 // @Success 200 {object} dto.APIResponse
-// @Router /reviewers [get]
+// @Router /dropdown/reviewers [get]
 func (h *DropdownHandler) GetReviewers(w http.ResponseWriter, r *http.Request) {
 	rows, err := r.Context().Value("db").(*sql.DB).QueryContext(
 		r.Context(),

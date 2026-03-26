@@ -375,7 +375,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/programs": {
+        "/dropdown/programs": {
             "get": {
                 "description": "Get list of all programs for dropdown",
                 "consumes": [
@@ -398,7 +398,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/reviewers": {
+        "/dropdown/reviewers": {
             "get": {
                 "description": "Get list of all active reviewers for reviewer selection",
                 "consumes": [
@@ -411,6 +411,70 @@ const docTemplate = `{
                     "dropdown"
                 ],
                 "summary": "Get all reviewers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/dropdown/subtopics": {
+            "get": {
+                "description": "Get list of subtopics for a specific topic",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dropdown"
+                ],
+                "summary": "Get subtopics by topic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic ID",
+                        "name": "topic_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/dropdown/topics": {
+            "get": {
+                "description": "Get list of topics for a specific program",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dropdown"
+                ],
+                "summary": "Get topics by program",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program ID",
+                        "name": "program_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -553,70 +617,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request"
-                    }
-                }
-            }
-        },
-        "/subtopics": {
-            "get": {
-                "description": "Get list of subtopics for a specific topic",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dropdown"
-                ],
-                "summary": "Get subtopics by topic",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Topic ID",
-                        "name": "topic_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/topics": {
-            "get": {
-                "description": "Get list of topics for a specific program",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dropdown"
-                ],
-                "summary": "Get topics by program",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Program ID",
-                        "name": "program_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.APIResponse"
-                        }
                     }
                 }
             }

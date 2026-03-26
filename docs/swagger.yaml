@@ -456,7 +456,7 @@ paths:
       summary: Create new content
       tags:
       - content
-  /programs:
+  /dropdown/programs:
     get:
       consumes:
       - application/json
@@ -471,7 +471,7 @@ paths:
       summary: Get all programs
       tags:
       - dropdown
-  /reviewers:
+  /dropdown/reviewers:
     get:
       consumes:
       - application/json
@@ -484,6 +484,48 @@ paths:
           schema:
             $ref: '#/definitions/dto.APIResponse'
       summary: Get all reviewers
+      tags:
+      - dropdown
+  /dropdown/subtopics:
+    get:
+      consumes:
+      - application/json
+      description: Get list of subtopics for a specific topic
+      parameters:
+      - description: Topic ID
+        in: query
+        name: topic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.APIResponse'
+      summary: Get subtopics by topic
+      tags:
+      - dropdown
+  /dropdown/topics:
+    get:
+      consumes:
+      - application/json
+      description: Get list of topics for a specific program
+      parameters:
+      - description: Program ID
+        in: query
+        name: program_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.APIResponse'
+      summary: Get topics by program
       tags:
       - dropdown
   /reviews/{version_id}/approve:
@@ -572,48 +614,6 @@ paths:
       summary: Get pending reviews
       tags:
       - review
-  /subtopics:
-    get:
-      consumes:
-      - application/json
-      description: Get list of subtopics for a specific topic
-      parameters:
-      - description: Topic ID
-        in: query
-        name: topic_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.APIResponse'
-      summary: Get subtopics by topic
-      tags:
-      - dropdown
-  /topics:
-    get:
-      consumes:
-      - application/json
-      description: Get list of topics for a specific program
-      parameters:
-      - description: Program ID
-        in: query
-        name: program_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.APIResponse'
-      summary: Get topics by program
-      tags:
-      - dropdown
 schemes:
 - https
 - http
