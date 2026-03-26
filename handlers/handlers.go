@@ -332,15 +332,17 @@ func (h *ContentHandler) UpdateContent(w http.ResponseWriter, r *http.Request) {
 
 // SubmitForReview handles submitting content for review
 // @Summary Submit content for review
-// @Description Submit content for reviewer approval
+// @Description Submit content for reviewer approval - content will be visible only to the assigned reviewer
 // @Tags content
 // @Accept json
 // @Produce json
 // @Security Bearer
 // @Param id path string true "Content ID"
-// @Success 200
-// @Failure 400
-// @Failure 400
+// @Param request body dto.SubmitForReviewRequest true "Submit for review with reviewer selection"
+// @Success 200 {object} dto.APIResponse
+// @Failure 400 {object} dto.APIResponse "Bad Request - reviewer_id is required"
+// @Failure 401 {object} dto.APIResponse "Unauthorized"
+// @Failure 404 {object} dto.APIResponse "Content not found"
 // @Router /contents/{id}/submit [post]
 func (h *ContentHandler) SubmitForReview(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

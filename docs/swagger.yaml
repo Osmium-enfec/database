@@ -125,6 +125,19 @@ definitions:
     required:
     - comment
     type: object
+  dto.SubmitForReviewRequest:
+    properties:
+      comment:
+        example: Please review this content carefully
+        maxLength: 1000
+        type: string
+      reviewer_id:
+        description: Reviewer to assign this for review
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - reviewer_id
+    type: object
   dto.UpdateContentRequest:
     properties:
       data:
@@ -352,20 +365,39 @@ paths:
     post:
       consumes:
       - application/json
-      description: Submit content for reviewer approval
+      description: Submit content for reviewer approval - content will be visible
+        only to the assigned reviewer
       parameters:
       - description: Content ID
         in: path
         name: id
         required: true
         type: string
+      - description: Submit for review with reviewer selection
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubmitForReviewRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/dto.APIResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - reviewer_id is required
+          schema:
+            $ref: '#/definitions/dto.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.APIResponse'
+        "404":
+          description: Content not found
+          schema:
+            $ref: '#/definitions/dto.APIResponse'
       security:
       - Bearer: []
       summary: Submit content for review

@@ -87,9 +87,10 @@ type UpdateContentRequest struct {
 }
 
 // SubmitForReviewRequest represents content submission for review
+// Content will be assigned to the specified reviewer and only visible to them
 type SubmitForReviewRequest struct {
-	Comment    string `json:"comment" validate:"max=1000"`
-	ReviewerID string `json:"reviewer_id" validate:"required"` // Reviewer to assign this for review
+	ReviewerID string `json:"reviewer_id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000" description:"ID of the reviewer to assign this content to (required)"` // Reviewer to assign this for review
+	Comment    string `json:"comment" validate:"max=1000" example:"Please review this content carefully" description:"Optional comments for the reviewer"`
 }
 
 // ContentResponse represents content in API response

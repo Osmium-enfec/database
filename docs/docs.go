@@ -318,7 +318,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Submit content for reviewer approval",
+                "description": "Submit content for reviewer approval - content will be visible only to the assigned reviewer",
                 "consumes": [
                     "application/json"
                 ],
@@ -336,14 +336,41 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Submit for review with reviewer selection",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubmitForReviewRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.APIResponse"
+                        }
                     },
                     "400": {
-                        "description": "Bad Request"
+                        "description": "Bad Request - reviewer_id is required",
+                        "schema": {
+                            "$ref": "#/definitions/dto.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Content not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.APIResponse"
+                        }
                     }
                 }
             }
@@ -771,6 +798,24 @@ const docTemplate = `{
                 "comment": {
                     "type": "string",
                     "maxLength": 1000
+                }
+            }
+        },
+        "dto.SubmitForReviewRequest": {
+            "type": "object",
+            "required": [
+                "reviewer_id"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Please review this content carefully"
+                },
+                "reviewer_id": {
+                    "description": "Reviewer to assign this for review",
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
