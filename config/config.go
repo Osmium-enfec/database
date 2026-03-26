@@ -13,22 +13,14 @@ type AppConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
-	MaxConn  int
-	URL      string // For Render's DATABASE_URL
-}
-
-type RedisConfig struct {
 	Host     string `json:"host" ini:"host"`
 	Port     string `json:"port" ini:"port"`
 	User     string `json:"user" ini:"user"`
 	Password string `json:"password" ini:"password"`
-	Database int    `json:"database" ini:"database"`
+	DBName   string `json:"dbname" ini:"dbname"`
+	SSLMode  string `json:"sslmode" ini:"sslmode"`
+	MaxConn  int    `json:"maxconn" ini:"maxconn"`
+	URL      string `json:"url" ini:"url"` // For Render's DATABASE_URL
 }
 
 type JWTConfig struct {
