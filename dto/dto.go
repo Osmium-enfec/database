@@ -20,6 +20,7 @@ type RegisterRequest struct {
 	Name     string `json:"name" validate:"required,max=255"`
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
+	Role     string `json:"role" validate:"omitempty,oneof=creator reviewer admin"` // Optional: defaults to 'creator'
 }
 
 // AuthResponse represents authentication response with tokens
@@ -87,7 +88,8 @@ type UpdateContentRequest struct {
 
 // SubmitForReviewRequest represents content submission for review
 type SubmitForReviewRequest struct {
-	Comment string `json:"comment" validate:"max=1000"`
+	Comment    string `json:"comment" validate:"max=1000"`
+	ReviewerID string `json:"reviewer_id" validate:"required"` // Reviewer to assign this for review
 }
 
 // ContentResponse represents content in API response
@@ -304,6 +306,13 @@ type SubtopicResponse struct {
 	TopicID     string `json:"topic_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+// ReviewerResponse represents a reviewer for dropdown
+type ReviewerResponse struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 // ============================================================================

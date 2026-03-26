@@ -23,7 +23,7 @@ import (
 
 // AuthService defines authentication operations
 type AuthService interface {
-	Register(ctx context.Context, name, email, password string) (*models.User, string, string, error)
+	Register(ctx context.Context, name, email, password, role string) (*models.User, string, string, error)
 	Login(ctx context.Context, email, password string) (*models.User, string, string, error)
 	ValidateToken(ctx context.Context, token string) (*models.User, error)
 	RefreshToken(ctx context.Context, refreshToken string) (string, error)
@@ -45,7 +45,7 @@ func NewAuthService(userRepo repositories.UserRepository, jwtSecret, refreshSecr
 }
 
 // Register creates a new user account
-func (s *authService) Register(ctx context.Context, name, email, password string) (*models.User, string, string, error) {
+func (s *authService) Register(ctx context.Context, name, email, password, role string) (*models.User, string, string, error) {
 	// Check if user already exists
 	_, err := s.userRepo.GetByEmail(ctx, email)
 	if err == nil {
@@ -59,12 +59,17 @@ func (s *authService) Register(ctx context.Context, name, email, password string
 	}
 
 	// Create user
+	userRole := "creator" // Default role
+	if role == "reviewer" || role == "admin" {
+		userRole = role
+	}
+
 	user := &models.User{
 		ID:           uuid.New().String(),
 		Name:         name,
 		Email:        email,
 		PasswordHash: string(hashedPassword),
-		Role:         "creator", // Default role
+		Role:         userRole,
 		IsActive:     true,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
@@ -207,7 +212,7 @@ type ContentService interface {
 	Get(ctx context.Context, contentID, userID string) (*models.Content, []string, error)
 	Update(ctx context.Context, contentID string, req *dto.UpdateContentRequest, userID string) (*models.Content, []string, error)
 	List(ctx context.Context, page, perPage int, filters map[string]string) ([]*models.Content, int, error)
-	SubmitForReview(ctx context.Context, contentID, userID string) (*models.Content, []string, error)
+	SubmitForReview(ctx context.Context, contentID, userID, reviewerID string) (*models.Content, []string, error)
 }
 
 type contentService struct {
@@ -395,8 +400,8 @@ func (s *contentService) List(ctx context.Context, page, perPage int, filters ma
 	return s.contentRepo.List(ctx, page, perPage, filters)
 }
 
-// SubmitForReview submits content for review
-func (s *contentService) SubmitForReview(ctx context.Context, contentID, userID string) (*models.Content, []string, error) {
+// SubmitForReview submits content for review with assigned reviewer
+func (s *contentService) SubmitForReview(ctx context.Context, contentID, userID, reviewerID string) (*models.Content, []string, error) {
 	content, err := s.contentRepo.GetByID(ctx, contentID)
 	if err != nil {
 		return nil, nil, err
@@ -407,8 +412,13 @@ func (s *contentService) SubmitForReview(ctx context.Context, contentID, userID 
 		return nil, nil, fmt.Errorf("permission denied")
 	}
 
+	// Validate reviewer exists and has reviewer role
+	// This would require checking the user in the database
+	// For now, we'll just store the reviewer_id
+
 	// Update status
 	content.Status = "pending_review"
+	content.ReviewerID = reviewerID // Assign the reviewer
 	content.UpdatedAt = time.Now()
 
 	if err := s.contentRepo.Update(ctx, content); err != nil {

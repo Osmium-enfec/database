@@ -56,7 +56,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, accessToken, refreshToken, err := h.authService.Register(r.Context(), req.Name, req.Email, req.Password)
+	user, accessToken, refreshToken, err := h.authService.Register(r.Context(), req.Name, req.Email, req.Password, req.Role)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			writeError(w, http.StatusConflict, "email already registered")
@@ -359,8 +359,13 @@ func (h *ContentHandler) SubmitForReview(w http.ResponseWriter, r *http.Request)
 	var req dto.SubmitForReviewRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
+	if req.ReviewerID == "" {
+		writeError(w, http.StatusBadRequest, "reviewer_id is required")
+		return
+	}
+
 	user := r.Context().Value("user").(*models.User)
-	content, tags, err := h.contentService.SubmitForReview(r.Context(), id, user.ID)
+	content, tags, err := h.contentService.SubmitForReview(r.Context(), id, user.ID, req.ReviewerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			writeError(w, http.StatusNotFound, "content not found")
@@ -747,6 +752,38 @@ func (h *DropdownHandler) GetSubtopicsByTopic(w http.ResponseWriter, r *http.Req
 	}
 
 	response := dto.NewSuccessResponse(subtopics, "Subtopics fetched successfully")
+	writeJSON(w, http.StatusOK, response)
+}
+
+// GetReviewers returns all active reviewers for dropdown
+// @Summary Get all reviewers
+// @Description Get list of all active reviewers for reviewer selection
+// @Tags dropdown
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.APIResponse
+// @Router /reviewers [get]
+func (h *DropdownHandler) GetReviewers(w http.ResponseWriter, r *http.Request) {
+	rows, err := r.Context().Value("db").(*sql.DB).QueryContext(
+		r.Context(),
+		"SELECT id, name, email FROM users WHERE role = 'reviewer' AND is_active = true ORDER BY name",
+	)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch reviewers")
+		return
+	}
+	defer rows.Close()
+
+	reviewers := []dto.ReviewerResponse{}
+	for rows.Next() {
+		var reviewer dto.ReviewerResponse
+		if err := rows.Scan(&reviewer.ID, &reviewer.Name, &reviewer.Email); err != nil {
+			continue
+		}
+		reviewers = append(reviewers, reviewer)
+	}
+
+	response := dto.NewSuccessResponse(reviewers, "Reviewers fetched successfully")
 	writeJSON(w, http.StatusOK, response)
 }
 

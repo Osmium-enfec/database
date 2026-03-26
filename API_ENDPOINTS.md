@@ -336,6 +336,46 @@ GET /api/v1/dropdown/subtopics?topic_id=550e8400-e29b-41d4-a716-446655440001
 
 ---
 
+### Get All Reviewers (Dropdown)
+
+Returns all active reviewers for reviewer selection during content submission.
+
+```
+GET /api/v1/dropdown/reviewers
+```
+
+### Headers
+```
+Content-Type: application/json
+```
+
+### Example Request
+```
+GET /api/v1/dropdown/reviewers
+```
+
+### Response (200)
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440200",
+      "name": "Alice Johnson",
+      "email": "alice@example.com"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440201",
+      "name": "Bob Smith",
+      "email": "bob@example.com"
+    }
+  ],
+  "message": "Reviewers fetched successfully"
+}
+```
+
+---
+
 ## Frontend Integration Examples
 
 ### JavaScript/React Example - Bulk Upload

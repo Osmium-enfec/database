@@ -72,6 +72,7 @@ type Content struct {
 	EstimatedTimeMinutes int       `json:"estimated_time_minutes"`
 	Status               string    `json:"status"` // draft, pending_review, approved, rejected
 	CreatedBy            string    `json:"created_by"`
+	ReviewerID           string    `json:"reviewer_id,omitempty"` // Assigned reviewer
 	CurrentVersionID     *string   `json:"current_version_id"`
 	IsActive             bool      `json:"is_active"`
 	CreatedAt            time.Time `json:"created_at"`

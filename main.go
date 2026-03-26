@@ -158,6 +158,11 @@ func main() {
 		ctx = context.WithValue(ctx, "db", db)
 		dropdownHandler.GetSubtopicsByTopic(w, r.WithContext(ctx))
 	})
+	mux.HandleFunc("/api/v1/dropdown/reviewers", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, "db", db)
+		dropdownHandler.GetReviewers(w, r.WithContext(ctx))
+	})
 
 	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
@@ -317,7 +322,7 @@ func initializeSchema(db *sql.DB) error {
 func seedPythonRoadmap(db *sql.DB) error {
 	// Check if Python program already exists
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM programs WHERE name = 'Python Programming'").Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM programs WHERE name = 'Python: Zero to Senior Developer'").Scan(&count)
 	if err != nil {
 		return err
 	}
@@ -327,18 +332,254 @@ func seedPythonRoadmap(db *sql.DB) error {
 		return nil
 	}
 
-	// Simple seed: Just insert the main program
-	// Topics and subtopics can be managed via API
-	_, err = db.Exec(`
-		INSERT INTO programs (name, description, is_active) 
-		VALUES ('Python Programming', 'Complete Python learning roadmap from beginner to senior developer level', true);
-	`)
+	// Python program with all 16 phases
+	pythonSQL := `
+	INSERT INTO programs (name, description, is_active) 
+	VALUES ('Python: Zero to Senior Developer', 'Complete Python learning roadmap from beginner to senior developer level', true)
+	ON CONFLICT DO NOTHING;
 
-	if err != nil && !strings.Contains(err.Error(), "unique constraint") {
-		return fmt.Errorf("failed to seed Python program: %v", err)
+	-- Phase 0: Foundations
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 0: Foundations of Programming', 'Beginner Mindset - What is programming and setting up environment', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 0: Foundations of Programming' LIMIT 1), 'What is Programming?', 'How computers execute code, Interpreted vs compiled languages', true),
+	((SELECT id FROM topics WHERE name = 'Phase 0: Foundations of Programming' LIMIT 1), 'Setting Up Environment', 'Installing Python, VS Code, Virtual environments', true),
+	((SELECT id FROM topics WHERE name = 'Phase 0: Foundations of Programming' LIMIT 1), 'First Program', 'print(), Comments, Basic syntax', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 1: Core Python Basics
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 1: Core Python Basics', 'Variables, operators, conditionals, loops', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 1: Core Python Basics' LIMIT 1), 'Variables & Data Types', 'Integers, Floats, Strings, Booleans, Type casting', true),
+	((SELECT id FROM topics WHERE name = 'Phase 1: Core Python Basics' LIMIT 1), 'Operators', 'Arithmetic, Comparison, Logical, Assignment operators', true),
+	((SELECT id FROM topics WHERE name = 'Phase 1: Core Python Basics' LIMIT 1), 'Input/Output', 'input() function, Formatting strings (f-strings)', true),
+	((SELECT id FROM topics WHERE name = 'Phase 1: Core Python Basics' LIMIT 1), 'Conditional Statements', 'if, elif, else, Nested conditions', true),
+	((SELECT id FROM topics WHERE name = 'Phase 1: Core Python Basics' LIMIT 1), 'Loops', 'for, while, break, continue, pass', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 2: Data Structures
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 2: Data Structures', 'Core data structures - Lists, Tuples, Sets, Dictionaries', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 2: Data Structures' LIMIT 1), 'Strings Deep Dive', 'Indexing, slicing, String methods', true),
+	((SELECT id FROM topics WHERE name = 'Phase 2: Data Structures' LIMIT 1), 'Lists', 'CRUD operations, List slicing, List comprehensions', true),
+	((SELECT id FROM topics WHERE name = 'Phase 2: Data Structures' LIMIT 1), 'Tuples', 'Immutability, Packing/unpacking', true),
+	((SELECT id FROM topics WHERE name = 'Phase 2: Data Structures' LIMIT 1), 'Sets', 'Unique elements, Set operations', true),
+	((SELECT id FROM topics WHERE name = 'Phase 2: Data Structures' LIMIT 1), 'Dictionaries', 'Key-value structure, Nested dictionaries', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 3: Functions & Modular Code
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 3: Functions & Modular Code', 'Functions, Lambda, Recursion, Modules & Packages', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 3: Functions & Modular Code' LIMIT 1), 'Functions Basics', 'Defining & calling, Arguments, Keyword arguments', true),
+	((SELECT id FROM topics WHERE name = 'Phase 3: Functions & Modular Code' LIMIT 1), 'Advanced Arguments', '*args, **kwargs, Default parameters', true),
+	((SELECT id FROM topics WHERE name = 'Phase 3: Functions & Modular Code' LIMIT 1), 'Lambda Functions', 'Anonymous functions, Using lambda with map/filter', true),
+	((SELECT id FROM topics WHERE name = 'Phase 3: Functions & Modular Code' LIMIT 1), 'Recursion', 'Base cases, Call stack', true),
+	((SELECT id FROM topics WHERE name = 'Phase 3: Functions & Modular Code' LIMIT 1), 'Modules & Packages', 'Importing modules, Creating modules', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 4: Object-Oriented Programming
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 4: Object-Oriented Programming', 'Classes, Inheritance, Polymorphism, Encapsulation', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 4: Object-Oriented Programming' LIMIT 1), 'Classes & Objects', 'Attributes & methods, Creating instances', true),
+	((SELECT id FROM topics WHERE name = 'Phase 4: Object-Oriented Programming' LIMIT 1), 'Constructors', '__init__ method, Initialization', true),
+	((SELECT id FROM topics WHERE name = 'Phase 4: Object-Oriented Programming' LIMIT 1), 'Encapsulation', 'Private variables, Getters/Setters', true),
+	((SELECT id FROM topics WHERE name = 'Phase 4: Object-Oriented Programming' LIMIT 1), 'Inheritance', 'Single & multiple inheritance, super()', true),
+	((SELECT id FROM topics WHERE name = 'Phase 4: Object-Oriented Programming' LIMIT 1), 'Polymorphism', 'Method overriding, Duck typing', true),
+	((SELECT id FROM topics WHERE name = 'Phase 4: Object-Oriented Programming' LIMIT 1), 'Magic Methods', '__str__, __repr__, __eq__', true),
+	((SELECT id FROM topics WHERE name = 'Phase 4: Object-Oriented Programming' LIMIT 1), 'Abstract Classes', 'Interface design, ABC module', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 5: Error Handling
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 5: Error Handling & Debugging', 'Exceptions, Debugging, Custom exceptions', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 5: Error Handling & Debugging' LIMIT 1), 'Exceptions', 'try, except, finally, else blocks', true),
+	((SELECT id FROM topics WHERE name = 'Phase 5: Error Handling & Debugging' LIMIT 1), 'Custom Exceptions', 'Creating custom exception classes', true),
+	((SELECT id FROM topics WHERE name = 'Phase 5: Error Handling & Debugging' LIMIT 1), 'Debugging Techniques', 'Breakpoints, Stack traces, Logging', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 6: File Handling
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 6: File Handling & Data Processing', 'Files, JSON, CSV, Logging', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 6: File Handling & Data Processing' LIMIT 1), 'File Operations', 'Read/write files, Context managers', true),
+	((SELECT id FROM topics WHERE name = 'Phase 6: File Handling & Data Processing' LIMIT 1), 'Working with JSON', 'json.load, json.dump, Parsing', true),
+	((SELECT id FROM topics WHERE name = 'Phase 6: File Handling & Data Processing' LIMIT 1), 'CSV Handling', 'csv module, pandas basics', true),
+	((SELECT id FROM topics WHERE name = 'Phase 6: File Handling & Data Processing' LIMIT 1), 'Logging', 'logging module, Log levels', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 7: Advanced Concepts
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 7: Advanced Python Concepts', 'Iterators, Generators, Decorators, Context Managers', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 7: Advanced Python Concepts' LIMIT 1), 'Iterators & Generators', 'yield, generator functions', true),
+	((SELECT id FROM topics WHERE name = 'Phase 7: Advanced Python Concepts' LIMIT 1), 'Decorators', 'Function wrapping, Parameterized decorators', true),
+	((SELECT id FROM topics WHERE name = 'Phase 7: Advanced Python Concepts' LIMIT 1), 'Context Managers', 'with statement, __enter__ and __exit__', true),
+	((SELECT id FROM topics WHERE name = 'Phase 7: Advanced Python Concepts' LIMIT 1), 'Closures', 'Nested functions, Variable capture', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 8: APIs & Networking
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 8: APIs & Networking', 'HTTP, REST, requests library, Authentication', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 8: APIs & Networking' LIMIT 1), 'HTTP Basics', 'GET, POST, PUT, DELETE, Status codes', true),
+	((SELECT id FROM topics WHERE name = 'Phase 8: APIs & Networking' LIMIT 1), 'Using APIs', 'requests library, JSON responses', true),
+	((SELECT id FROM topics WHERE name = 'Phase 8: APIs & Networking' LIMIT 1), 'REST Concepts', 'RESTful principles, HTTP methods', true),
+	((SELECT id FROM topics WHERE name = 'Phase 8: APIs & Networking' LIMIT 1), 'Authentication', 'API keys, JWT basics', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 9: Concurrency
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 9: Concurrency & Performance', 'Threading, Multiprocessing, Async', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 9: Concurrency & Performance' LIMIT 1), 'Multithreading', 'Thread class, Synchronization, Locks', true),
+	((SELECT id FROM topics WHERE name = 'Phase 9: Concurrency & Performance' LIMIT 1), 'Multiprocessing', 'Process class, Process pools', true),
+	((SELECT id FROM topics WHERE name = 'Phase 9: Concurrency & Performance' LIMIT 1), 'Async Programming', 'async/await, asyncio, Event loops', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 10: Databases
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 10: Databases', 'SQL, PostgreSQL, ORM, Transactions', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 10: Databases' LIMIT 1), 'SQL Basics', 'SELECT, INSERT, UPDATE, DELETE, Joins', true),
+	((SELECT id FROM topics WHERE name = 'Phase 10: Databases' LIMIT 1), 'PostgreSQL Integration', 'psycopg2, Connection strings', true),
+	((SELECT id FROM topics WHERE name = 'Phase 10: Databases' LIMIT 1), 'ORM', 'SQLAlchemy, Django ORM', true),
+	((SELECT id FROM topics WHERE name = 'Phase 10: Databases' LIMIT 1), 'Transactions', 'ACID properties, Commit/Rollback', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 11: Testing
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 11: Testing & Code Quality', 'Unit Testing, Mocking, Coverage', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 11: Testing & Code Quality' LIMIT 1), 'Unit Testing', 'unittest, pytest, Writing tests', true),
+	((SELECT id FROM topics WHERE name = 'Phase 11: Testing & Code Quality' LIMIT 1), 'Mocking', 'unittest.mock, Mocking dependencies', true),
+	((SELECT id FROM topics WHERE name = 'Phase 11: Testing & Code Quality' LIMIT 1), 'Code Coverage', 'Coverage.py', true),
+	((SELECT id FROM topics WHERE name = 'Phase 11: Testing & Code Quality' LIMIT 1), 'Linting & Formatting', 'flake8, black, Code style', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 12: Backend Development
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 12: Backend Development', 'Web frameworks, APIs, Authentication', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 12: Backend Development' LIMIT 1), 'Web Basics', 'HTTP lifecycle, Request/Response', true),
+	((SELECT id FROM topics WHERE name = 'Phase 12: Backend Development' LIMIT 1), 'Frameworks', 'Flask, FastAPI, Django basics', true),
+	((SELECT id FROM topics WHERE name = 'Phase 12: Backend Development' LIMIT 1), 'Building APIs', 'RESTful APIs, Validation', true),
+	((SELECT id FROM topics WHERE name = 'Phase 12: Backend Development' LIMIT 1), 'Authentication Systems', 'JWT, Sessions, OAuth', true),
+	((SELECT id FROM topics WHERE name = 'Phase 12: Backend Development' LIMIT 1), 'Middleware', 'CORS, Rate limiting', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 13: System Design
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 13: System Design with Python', 'Architecture, Design Patterns, Scaling', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 13: System Design with Python' LIMIT 1), 'Project Structure', 'Folder organization, Modularity', true),
+	((SELECT id FROM topics WHERE name = 'Phase 13: System Design with Python' LIMIT 1), 'Design Patterns', 'Singleton, Factory, Observer', true),
+	((SELECT id FROM topics WHERE name = 'Phase 13: System Design with Python' LIMIT 1), 'Scaling Applications', 'Load balancing, Microservices', true),
+	((SELECT id FROM topics WHERE name = 'Phase 13: System Design with Python' LIMIT 1), 'Caching', 'Redis, Memcached, Strategies', true),
+	((SELECT id FROM topics WHERE name = 'Phase 13: System Design with Python' LIMIT 1), 'Message Queues', 'Kafka, RabbitMQ, Event-driven', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 14: DevOps & Deployment
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 14: DevOps & Deployment', 'Git, Docker, CI/CD, Cloud Deployment', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 14: DevOps & Deployment' LIMIT 1), 'Git & GitHub', 'Version control, Branching, PRs', true),
+	((SELECT id FROM topics WHERE name = 'Phase 14: DevOps & Deployment' LIMIT 1), 'Docker', 'Containers, Images, Docker Compose', true),
+	((SELECT id FROM topics WHERE name = 'Phase 14: DevOps & Deployment' LIMIT 1), 'CI/CD', 'GitHub Actions, Jenkins', true),
+	((SELECT id FROM topics WHERE name = 'Phase 14: DevOps & Deployment' LIMIT 1), 'Cloud Deployment', 'AWS, GCP, Heroku, Render', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 15: Specialization Tracks
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 15: Specialization Tracks', 'Backend, Data Engineering, AI/ML, Automation', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 15: Specialization Tracks' LIMIT 1), 'Backend Engineer Track', 'FastAPI, Microservices, Distributed systems', true),
+	((SELECT id FROM topics WHERE name = 'Phase 15: Specialization Tracks' LIMIT 1), 'Data Engineering Track', 'Pandas, ETL pipelines, Airflow', true),
+	((SELECT id FROM topics WHERE name = 'Phase 15: Specialization Tracks' LIMIT 1), 'AI/ML Track', 'Scikit-learn, TensorFlow, Deep learning', true),
+	((SELECT id FROM topics WHERE name = 'Phase 15: Specialization Tracks' LIMIT 1), 'Automation Track', 'Web scraping, Task automation', true)
+	ON CONFLICT DO NOTHING;
+
+	-- Phase 16: Senior-Level Skills
+	INSERT INTO topics (program_id, name, description, is_active)
+	SELECT id, 'Phase 16: Senior-Level Skills', 'Architecture, System Design, Mentoring', true
+	FROM programs WHERE name = 'Python: Zero to Senior Developer' LIMIT 1
+	ON CONFLICT DO NOTHING;
+
+	INSERT INTO subtopics (topic_id, name, description, is_active) VALUES
+	((SELECT id FROM topics WHERE name = 'Phase 16: Senior-Level Skills' LIMIT 1), 'Code Architecture', 'Clean code, SOLID principles', true),
+	((SELECT id FROM topics WHERE name = 'Phase 16: Senior-Level Skills' LIMIT 1), 'System Design Interviews', 'Scalable systems, Trade-offs', true),
+	((SELECT id FROM topics WHERE name = 'Phase 16: Senior-Level Skills' LIMIT 1), 'Open Source Contribution', 'Contributing to projects', true),
+	((SELECT id FROM topics WHERE name = 'Phase 16: Senior-Level Skills' LIMIT 1), 'Mentoring & Code Reviews', 'Effective reviews, Mentoring', true),
+	((SELECT id FROM topics WHERE name = 'Phase 16: Senior-Level Skills' LIMIT 1), 'Production Systems', 'Reliability, Performance, Monitoring', true)
+	ON CONFLICT DO NOTHING;
+	`
+
+	// Split by semicolon and execute each statement
+	statements := strings.Split(pythonSQL, ";")
+	for _, stmt := range statements {
+		trimmed := strings.TrimSpace(stmt)
+		if trimmed == "" {
+			continue
+		}
+		if _, err := db.Exec(trimmed); err != nil {
+			log.Printf("Warning: Error executing statement: %v", err)
+			// Continue on error as some inserts may conflict
+		}
 	}
 
-	log.Println("Python program seeded successfully")
+	log.Println("Python roadmap seeded successfully with all topics")
 	return nil
 }
 
