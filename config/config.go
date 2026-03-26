@@ -136,7 +136,7 @@ func LoadConfig() *Config {
 		CORS: CORSConfig{
 			AllowedOrigins: parseCORSOrigins(
 				getEnv("CORS_ALLOWED_ORIGINS",
-					"https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app,http://localhost:3000,http://localhost:5173,https://localhost:3000"),
+					"https://content-review-api-bnkf.onrender.com,https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app,http://localhost:3000,http://localhost:5173,https://localhost:3000"),
 			),
 		},
 	}
