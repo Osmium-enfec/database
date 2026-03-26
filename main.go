@@ -28,7 +28,7 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 // @host content-review-api-bnkf.onrender.com
 // @basePath /api/v1
-// @schemes http https
+// @schemes https http
 
 func main() {
 	// Load configuration

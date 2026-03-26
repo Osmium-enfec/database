@@ -946,7 +946,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "content-review-api-bnkf.onrender.com",
 	BasePath:         "/api/v1",
-	Schemes:          []string{"http", "https"},
+	Schemes:          []string{"https", "http"},
 	Title:            "Content Review API",
 	Description:      "A production-grade content management and review system",
 	InfoInstanceName: "swagger",
