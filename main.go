@@ -117,6 +117,13 @@ func main() {
 	mux.HandleFunc("/api/v1/contents/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			withAuth(authService, contentHandler.GetContent)(w, r)
+		} else if r.Method == http.MethodPost {
+			// Check if it's a submit request
+			if strings.HasSuffix(r.URL.Path, "/submit") {
+				withAuth(authService, contentHandler.SubmitForReview)(w, r)
+			} else {
+				http.Error(w, `{"success": false, "message": "invalid path"}`, http.StatusBadRequest)
+			}
 		} else {
 			http.Error(w, `{"success": false, "message": "invalid method"}`, http.StatusBadRequest)
 		}
