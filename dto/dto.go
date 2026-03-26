@@ -278,3 +278,59 @@ func NewErrorResponse(message string, code string, errors []string) *APIResponse
 		Errors:  errors,
 	}
 }
+
+// ============================================================================
+// Program/Topic/Subtopic DTOs (for dropdowns)
+// ============================================================================
+
+// ProgramResponse represents a program for dropdown
+type ProgramResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// TopicResponse represents a topic for dropdown
+type TopicResponse struct {
+	ID          string `json:"id"`
+	ProgramID   string `json:"program_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// SubtopicResponse represents a subtopic for dropdown
+type SubtopicResponse struct {
+	ID          string `json:"id"`
+	TopicID     string `json:"topic_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// ============================================================================
+// Bulk Upload DTOs
+// ============================================================================
+
+// BulkCreateContentRequest represents bulk content creation request
+type BulkCreateContentRequest struct {
+	Contents []CreateContentRequest `json:"contents" validate:"required,min=1,max=100"`
+}
+
+// BulkContentResultItem represents result for a single content creation
+type BulkContentResultItem struct {
+	Index   int    `json:"index"`
+	Title   string `json:"title"`
+	Success bool   `json:"success"`
+	ID      string `json:"id,omitempty"`
+	Error   string `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// BulkCreateContentResponse represents bulk content creation response
+type BulkCreateContentResponse struct {
+	Success        bool                    `json:"success"`
+	TotalRequested int                     `json:"total_requested"`
+	TotalCreated   int                     `json:"total_created"`
+	TotalFailed    int                     `json:"total_failed"`
+	Results        []BulkContentResultItem `json:"results"`
+	Message        string                  `json:"message,omitempty"`
+}

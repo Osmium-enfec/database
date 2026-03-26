@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -540,6 +541,213 @@ func extractVersionIDFromPath(path string, suffix string) string {
 	trimmed := strings.TrimPrefix(path, "/api/v1/reviews/")
 	trimmed = strings.TrimSuffix(trimmed, suffix)
 	return trimmed
+}
+
+// ============================================================================
+// Bulk Upload Handler
+// ============================================================================
+
+// BulkCreateContent handles bulk content creation
+// @Summary Bulk create content items
+// @Description Create multiple content items (questions, code problems, documentation) in one request
+// @Tags content
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body dto.BulkCreateContentRequest true "Array of content items to create (max 100)"
+// @Success 200
+// @Failure 400
+// @Failure 401
+// @Failure 500
+// @Router /contents/bulk [post]
+func (h *ContentHandler) BulkCreateContent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req dto.BulkCreateContentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if len(req.Contents) == 0 {
+		writeError(w, http.StatusBadRequest, "contents array cannot be empty")
+		return
+	}
+
+	if len(req.Contents) > 100 {
+		writeError(w, http.StatusBadRequest, "maximum 100 items allowed per request")
+		return
+	}
+
+	user := r.Context().Value("user").(*models.User)
+	if user == nil {
+		writeError(w, http.StatusUnauthorized, "user not found in context")
+		return
+	}
+
+	// Process each content item
+	response := &dto.BulkCreateContentResponse{
+		Success:        true,
+		TotalRequested: len(req.Contents),
+		Results:        make([]dto.BulkContentResultItem, 0, len(req.Contents)),
+	}
+
+	for idx, contentReq := range req.Contents {
+		result := dto.BulkContentResultItem{
+			Index: idx,
+			Title: contentReq.Data.Title,
+		}
+
+		// Create content via service
+		content, _, err := h.contentService.Create(r.Context(), &contentReq, user.ID)
+
+		if err != nil {
+			result.Success = false
+			result.Error = err.Error()
+			result.Message = "Failed to create content"
+			response.TotalFailed++
+		} else {
+			result.Success = true
+			result.ID = content.ID
+			result.Message = "Content created successfully"
+			response.TotalCreated++
+		}
+
+		response.Results = append(response.Results, result)
+	}
+
+	response.Message = "Bulk upload completed"
+	writeJSON(w, http.StatusOK, response)
+}
+
+// ============================================================================
+// Dropdown Handlers (for Programs/Topics/Subtopics)
+// ============================================================================
+
+type DropdownHandler struct {
+	contentService services.ContentService
+}
+
+// NewDropdownHandler creates a new dropdown handler
+func NewDropdownHandler(contentService services.ContentService) *DropdownHandler {
+	return &DropdownHandler{
+		contentService: contentService,
+	}
+}
+
+// GetPrograms returns all programs for dropdown
+// @Summary Get all programs
+// @Description Get list of all programs for dropdown
+// @Tags dropdown
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.APIResponse
+// @Router /programs [get]
+func (h *DropdownHandler) GetPrograms(w http.ResponseWriter, r *http.Request) {
+	rows, err := r.Context().Value("db").(*sql.DB).QueryContext(
+		r.Context(),
+		"SELECT id, name, description FROM programs WHERE is_active = true ORDER BY name",
+	)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch programs")
+		return
+	}
+	defer rows.Close()
+
+	programs := []dto.ProgramResponse{}
+	for rows.Next() {
+		var prog dto.ProgramResponse
+		if err := rows.Scan(&prog.ID, &prog.Name, &prog.Description); err != nil {
+			continue
+		}
+		programs = append(programs, prog)
+	}
+
+	response := dto.NewSuccessResponse(programs, "Programs fetched successfully")
+	writeJSON(w, http.StatusOK, response)
+}
+
+// GetTopicsByProgram returns topics for a specific program
+// @Summary Get topics by program
+// @Description Get list of topics for a specific program
+// @Tags dropdown
+// @Accept json
+// @Produce json
+// @Param program_id query string true "Program ID"
+// @Success 200 {object} dto.APIResponse
+// @Router /topics [get]
+func (h *DropdownHandler) GetTopicsByProgram(w http.ResponseWriter, r *http.Request) {
+	programID := r.URL.Query().Get("program_id")
+	if programID == "" {
+		writeError(w, http.StatusBadRequest, "program_id is required")
+		return
+	}
+
+	rows, err := r.Context().Value("db").(*sql.DB).QueryContext(
+		r.Context(),
+		"SELECT id, program_id, name, description FROM topics WHERE program_id = $1 AND is_active = true ORDER BY name",
+		programID,
+	)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch topics")
+		return
+	}
+	defer rows.Close()
+
+	topics := []dto.TopicResponse{}
+	for rows.Next() {
+		var topic dto.TopicResponse
+		if err := rows.Scan(&topic.ID, &topic.ProgramID, &topic.Name, &topic.Description); err != nil {
+			continue
+		}
+		topics = append(topics, topic)
+	}
+
+	response := dto.NewSuccessResponse(topics, "Topics fetched successfully")
+	writeJSON(w, http.StatusOK, response)
+}
+
+// GetSubtopicsByTopic returns subtopics for a specific topic
+// @Summary Get subtopics by topic
+// @Description Get list of subtopics for a specific topic
+// @Tags dropdown
+// @Accept json
+// @Produce json
+// @Param topic_id query string true "Topic ID"
+// @Success 200 {object} dto.APIResponse
+// @Router /subtopics [get]
+func (h *DropdownHandler) GetSubtopicsByTopic(w http.ResponseWriter, r *http.Request) {
+	topicID := r.URL.Query().Get("topic_id")
+	if topicID == "" {
+		writeError(w, http.StatusBadRequest, "topic_id is required")
+		return
+	}
+
+	rows, err := r.Context().Value("db").(*sql.DB).QueryContext(
+		r.Context(),
+		"SELECT id, topic_id, name, description FROM subtopics WHERE topic_id = $1 AND is_active = true ORDER BY name",
+		topicID,
+	)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch subtopics")
+		return
+	}
+	defer rows.Close()
+
+	subtopics := []dto.SubtopicResponse{}
+	for rows.Next() {
+		var subtopic dto.SubtopicResponse
+		if err := rows.Scan(&subtopic.ID, &subtopic.TopicID, &subtopic.Name, &subtopic.Description); err != nil {
+			continue
+		}
+		subtopics = append(subtopics, subtopic)
+	}
+
+	response := dto.NewSuccessResponse(subtopics, "Subtopics fetched successfully")
+	writeJSON(w, http.StatusOK, response)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
