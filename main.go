@@ -120,7 +120,10 @@ func main() {
 		} else if r.Method == http.MethodPost {
 			// Check if it's a submit request
 			if strings.HasSuffix(r.URL.Path, "/submit") {
-				withAuth(authService, contentHandler.SubmitForReview)(w, r)
+				// Inject db into context for SubmitForReview handler
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, "db", db)
+				withAuth(authService, contentHandler.SubmitForReview)(w, r.WithContext(ctx))
 			} else {
 				http.Error(w, `{"success": false, "message": "invalid path"}`, http.StatusBadRequest)
 			}
