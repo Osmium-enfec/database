@@ -23,6 +23,14 @@ type DatabaseConfig struct {
 	URL      string // For Render's DATABASE_URL
 }
 
+type RedisConfig struct {
+	Host     string `json:"host" ini:"host"`
+	Port     string `json:"port" ini:"port"`
+	User     string `json:"user" ini:"user"`
+	Password string `json:"password" ini:"password"`
+	Database int    `json:"database" ini:"database"`
+}
+
 type JWTConfig struct {
 	Secret        string
 	RefreshSecret string
