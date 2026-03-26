@@ -90,6 +90,7 @@ type ContentData struct {
 	Description       string             `json:"description"`
 	QuestionType      string             `json:"question_type,omitempty"` // mcq, msq, fill, short
 	QuestionText      string             `json:"question_text,omitempty"`
+	Hints             []string           `json:"hints,omitempty"` // At least 3 hints for questions
 	Options           []string           `json:"options,omitempty"`
 	CorrectOptions    []int              `json:"correct_options,omitempty"`
 	CodeProblemData   *CodeProblemData   `json:"code_problem_data,omitempty"`
