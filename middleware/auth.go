@@ -106,18 +106,26 @@ func CORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 			allowed := false
 
 			// Check if origin is in allowed list
-			for _, allowedOrigin := range allowedOrigins {
-				if origin == allowedOrigin || allowedOrigin == "*" {
-					allowed = true
-					break
+			if origin != "" {
+				for _, allowedOrigin := range allowedOrigins {
+					// Exact match
+					if origin == allowedOrigin {
+						allowed = true
+						break
+					}
+					// Wildcard
+					if allowedOrigin == "*" {
+						allowed = true
+						break
+					}
 				}
 			}
 
-			// Always set CORS headers for requests with Origin header
+			// Set CORS headers for allowed origins
 			if origin != "" && allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token, Origin")
+				w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token, Origin, Access-Control-Request-Headers")
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Access-Control-Max-Age", "86400")
 			}
@@ -127,8 +135,12 @@ func CORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 				if origin != "" && allowed {
 					w.WriteHeader(http.StatusNoContent)
 				} else if origin != "" {
-					// Return 403 for disallowed origins on preflight
-					w.WriteHeader(http.StatusForbidden)
+					// For disallowed origins, still handle OPTIONS gracefully
+					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+					w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token, Origin")
+					w.WriteHeader(http.StatusNoContent)
+				} else {
+					w.WriteHeader(http.StatusNoContent)
 				}
 				return
 			}
