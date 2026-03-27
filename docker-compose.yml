@@ -6,5 +6,8 @@ services:
     container_name: go-content
     hostname: go-content
     restart: unless-stopped
+    environment:
+      SECRET: ${SECRET}
+      STAGE: ${STAGE}
     ports:
       - "8114:8080"
