@@ -1,6 +1,10 @@
 package util
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -58,10 +62,46 @@ func DecryptBytesFromFile(path string, key string) []byte {
 	return decryptBytes(encrypted, key)
 }
 
-// decryptBytes is a placeholder for the actual decryption logic
-// Replace this with your actual decryption implementation
-func decryptBytes(encrypted, key string) []byte {
-	// TODO: Implement actual decryption logic
-	// This is a placeholder - implement based on your encryption scheme
-	return []byte(encrypted)
+// decryptBytes decrypts AES-GCM encrypted data
+// encodedData: base64 URL-encoded encrypted data (nonce + ciphertext)
+// key: encryption secret key
+// Returns: decrypted plaintext bytes
+func decryptBytes(encodedData string, key string) []byte {
+	stretchedKey := keyStretch(key)
+
+	dataBytes, err := base64.URLEncoding.DecodeString(encodedData)
+	if err != nil {
+		panic(err)
+	}
+
+	block, err := aes.NewCipher(stretchedKey)
+	if err != nil {
+		panic(err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		panic(err)
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(dataBytes) < nonceSize {
+		panic("ciphertext too short")
+	}
+
+	nonce, ciphertext := dataBytes[:nonceSize], dataBytes[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	return plaintext
+}
+
+// keyStretch derives a 32-byte key from a string secret using PBKDF2
+// This is a placeholder - implement based on your key derivation needs
+// For now, it uses SHA256 to expand the key to 32 bytes
+func keyStretch(key string) []byte {
+	hash := sha256.Sum256([]byte(key)) // Use SHA-256 to stretch the key
+	return hash[:32]                   // Return a 32-byte key for AES-256
 }

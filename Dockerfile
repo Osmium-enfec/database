@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -30,6 +30,9 @@ COPY --from=builder /app/main .
 
 # Copy docs directory for Swagger UI
 COPY --from=builder /app/docs ./docs
+
+# Copy encrypted configuration files
+COPY --from=builder /app/*.ini.enc ./
 
 # Expose port
 EXPOSE 8080

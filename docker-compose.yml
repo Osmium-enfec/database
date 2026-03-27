@@ -25,7 +25,7 @@ services:
     build: .
     container_name: content_review_api
     environment:
-      ENVIRONMENT: production
+      ENVIRONMENT: ${ENVIRONMENT:-production}
       APP_NAME: content-review-api
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
@@ -40,6 +40,8 @@ services:
       JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production
       JWT_EXPIRY_HOURS: 24
       DEBUG: "false"
+      STAGE: ${STAGE:-development}
+      SECRET: ${SECRET}
     ports:
       - "8080:8080"
     depends_on:

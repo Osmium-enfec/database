@@ -34,12 +34,39 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 
+type ConfigObject struct {
+	Database DatabaseConfig `json:"database" ini:"database"`
+}
+
+type DatabaseConfig struct {
+	Host     string `json:"host" ini:"host"`
+	Port     string `json:"port" ini:"port"`
+	User     string `json:"user" ini:"user"`
+	Password string `json:"password" ini:"password"`
+	DBName   string `json:"dbname" ini:"dbname"`
+	SSLMode  string `json:"sslmode" ini:"sslmode"`
+}
+
 func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
+	config := config.LoadConfigObject()
+
+	// Get DSN from config.Database.URL or build it
+	dsn := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		config.Database.Host,
+		config.Database.Port,
+		config.Database.User,
+		config.Database.Password,
+		config.Database.DBName,
+		config.Database.SSLMode,
+	)
+
+	fmt.Printf("Using DSN: %s\n", dsn) // Log the DSN for debugging (remove in production)
 
 	// Connect to database
-	db, err := connectDatabase(cfg)
+	db, err := connectDatabase(dsn, cfg.Database.MaxConn)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -190,24 +217,14 @@ func main() {
 	}
 }
 
-func connectDatabase(cfg *config.Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Database.Host,
-		cfg.Database.Port,
-		cfg.Database.User,
-		cfg.Database.Password,
-		cfg.Database.DBName,
-		cfg.Database.SSLMode,
-	)
-
+func connectDatabase(dsn string, maxConn int) (*sql.DB, error) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	db.SetMaxOpenConns(cfg.Database.MaxConn)
-	db.SetMaxIdleConns(cfg.Database.MaxConn / 2)
+	db.SetMaxOpenConns(maxConn)
+	db.SetMaxIdleConns(maxConn / 2)
 
 	if err := db.Ping(); err != nil {
 		return nil, err

@@ -4,12 +4,18 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"project/util"
 )
 
 type AppConfig struct {
 	Name        string
 	Environment string
 	Debug       bool
+}
+
+type ConfigObject struct {
+	Database DatabaseConfig `json:"database" ini:"database"`
 }
 
 type DatabaseConfig struct {
@@ -24,26 +30,26 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret        string
-	RefreshSecret string
-	ExpiryHours   int
+	Secret        string `json:"secret" ini:"secret"`
+	RefreshSecret string `json:"refresh_secret" ini:"refresh_secret"`
+	ExpiryHours   int    `json:"expiry_hours" ini:"expiry_hours"`
 }
 
 type ServerConfig struct {
-	Host string
-	Port string
+	Host string `json:"host" ini:"host"`
+	Port string `json:"port" ini:"port"`
 }
 
 type CORSConfig struct {
-	AllowedOrigins []string
+	AllowedOrigins []string `json:"allowed_origins" ini:"allowed_origins"`
 }
 
 type Config struct {
-	App      AppConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
-	Server   ServerConfig
-	CORS     CORSConfig
+	App      AppConfig      `json:"app" ini:"app"`
+	Database DatabaseConfig `json:"database" ini:"database"`
+	JWT      JWTConfig      `json:"jwt" ini:"jwt"`
+	Server   ServerConfig   `json:"server" ini:"server"`
+	CORS     CORSConfig     `json:"cors" ini:"cors"`
 }
 
 // ParseDatabaseURL parses Render's DATABASE_URL format: postgres://user:password@host:port/dbname
@@ -86,35 +92,19 @@ func parseDatabaseURL(dbURL string) (host, port, user, password, dbname, sslmode
 	return
 }
 
-func LoadConfig() *Config {
-	// Check for Render's DATABASE_URL first
-	dbURL := os.Getenv("DATABASE_URL")
-	var dbConfig DatabaseConfig
+func LoadConfigObject() ConfigObject {
+	stage := os.Getenv("STAGE")
+	secret := os.Getenv("SECRET")
+	return util.IniConfig[ConfigObject](stage, secret)
+}
 
-	if dbURL != "" {
-		// Parse Render's DATABASE_URL
-		host, port, user, password, dbname, sslmode := parseDatabaseURL(dbURL)
-		dbConfig = DatabaseConfig{
-			Host:     host,
-			Port:     port,
-			User:     user,
-			Password: password,
-			DBName:   dbname,
-			SSLMode:  sslmode,
-			MaxConn:  getEnvInt("DB_MAX_CONN", 25),
-			URL:      dbURL,
-		}
-	} else {
-		// Fall back to individual environment variables (for local development)
-		dbConfig = DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "5432"),
-			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "postgres"),
-			DBName:   getEnv("DB_NAME", "content_review"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
-			MaxConn:  getEnvInt("DB_MAX_CONN", 25),
-		}
+func LoadConfig() *Config {
+	stage := getEnv("CONFIG_STAGE", "development")
+	secret := getEnv("CONFIG_SECRET", "")
+
+	// Try to load from encrypted INI files first
+	if secret != "" && stage != "" {
+		return util.IniConfig[*Config](stage, secret)
 	}
 
 	return &Config{
@@ -123,7 +113,7 @@ func LoadConfig() *Config {
 			Environment: getEnv("ENVIRONMENT", "production"),
 			Debug:       getEnv("DEBUG", "false") == "true",
 		},
-		Database: dbConfig,
+
 		JWT: JWTConfig{
 			Secret:        getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
 			RefreshSecret: getEnv("JWT_REFRESH_SECRET", "your-refresh-secret-change-in-production"),
