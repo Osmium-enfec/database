@@ -8,5 +8,3 @@ services:
     restart: unless-stopped
     ports:
       - "8114:8080"
-
-    restart: unless-stopped
