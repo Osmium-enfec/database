@@ -126,7 +126,7 @@ func LoadConfig() *Config {
 		CORS: CORSConfig{
 			AllowedOrigins: parseCORSOrigins(
 				getEnv("CORS_ALLOWED_ORIGINS",
-					"https://content-review-api-bnkf.onrender.com,https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app,http://localhost:3000,http://localhost:5173,https://localhost:3000"),
+					"https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app,https://e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovableproject.com,https://contentenfeca.lovable.app,https://content.enfeca.com,https://content-review-api-bnkf.onrender.com,http://localhost:3000,http://localhost:5173,https://localhost:3000"),
 			),
 		},
 	}
@@ -137,9 +137,12 @@ func parseCORSOrigins(originsStr string) []string {
 	if originsStr == "" {
 		return []string{
 			// Lovable URLs
-			"https://e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovableproject.com",
 			"https://id-preview--e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovable.app",
+			"https://e5b904ce-9f96-4c37-9e1a-41a95d44462a.lovableproject.com",
 			"https://contentenfeca.lovable.app",
+			"https://content.enfeca.com",
+			// Render deployment
+			"https://content-review-api-bnkf.onrender.com",
 			// Local development
 			"http://localhost:3000",
 			"http://localhost:5173",
